@@ -1,0 +1,5 @@
+com\pratkdev\sesemltoperson\service\EmailToPersonService.class
+com\pratkdev\sesemltoperson\service\S3EmailService.class
+com\pratkdev\sesemltoperson\SesEmlToPersonApplication.class
+com\pratkdev\sesemltoperson\controller\PersonController.class
+com\pratkdev\sesemltoperson\model\Person.class

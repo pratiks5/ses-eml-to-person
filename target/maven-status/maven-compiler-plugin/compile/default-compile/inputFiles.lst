@@ -1,0 +1,5 @@
+D:\Repos\ses-eml-to-person\src\main\java\com\pratkdev\sesemltoperson\controller\PersonController.java
+D:\Repos\ses-eml-to-person\src\main\java\com\pratkdev\sesemltoperson\model\Person.java
+D:\Repos\ses-eml-to-person\src\main\java\com\pratkdev\sesemltoperson\service\EmailToPersonService.java
+D:\Repos\ses-eml-to-person\src\main\java\com\pratkdev\sesemltoperson\service\S3EmailService.java
+D:\Repos\ses-eml-to-person\src\main\java\com\pratkdev\sesemltoperson\SesEmlToPersonApplication.java
