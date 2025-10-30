@@ -1,24 +1,27 @@
 package com.pratkdev.sesemltoperson.service;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.pratkdev.sesemltoperson.model.FileOutput;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class S3EmailService {
 
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final String bucket;
 
     public S3EmailService(@Value("${aws.accessKeyId}") String accessKey,
@@ -26,17 +29,45 @@ public class S3EmailService {
                           @Value("${aws.region}") String region,
                           @Value("${aws.s3.bucket}") String bucket) {
         this.bucket = bucket;
-        BasicAWSCredentials creds = new BasicAWSCredentials(accessKey, secretKey);
-        this.s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(region)
-                .withCredentials(new AWSStaticCredentialsProvider(creds))
+
+        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
+
+        this.s3Client = S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
                 .build();
     }
+
+
+    public List<FileOutput> downloadAllEmlFiles() throws IOException {
+        List<FileOutput> downloaded = new ArrayList<>();
+
+        ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucket).build();
+        ListObjectsV2Response listing = s3Client.listObjectsV2(request);
+
+        return listing.contents().stream()
+                .map(software.amazon.awssdk.services.s3.model.S3Object::key)
+                .filter(key -> key != null && key.toLowerCase().endsWith(".eml"))
+                .map(key -> {
+                    GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                            .bucket(bucket)
+                            .key(key)
+                            .build();
+
+                    ResponseInputStream<GetObjectResponse> responseStream = s3Client.getObject(getObjectRequest);
+                    ;
+
+                    return new FileOutput(responseStream, key);
+
+                })
+                .collect(Collectors.toList());
+    }
+
 
     /**
      * Download all .eml files from the configured bucket into a temporary directory and return list of files.
      */
-    public List<File> downloadAllEmlFiles() throws IOException {
+   /* public List<File> downloadAllEmlFiles() throws IOException {
         List<File> downloaded = new ArrayList<>();
         ObjectListing listing = s3Client.listObjects(bucket);
         List<S3ObjectSummary> summaries = listing.getObjectSummaries();
@@ -59,5 +90,5 @@ public class S3EmailService {
             downloaded.add(tmp);
         }
         return downloaded;
-    }
+    }*/
 }
